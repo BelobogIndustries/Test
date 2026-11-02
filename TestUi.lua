@@ -585,11 +585,11 @@ function AetherUI:CreateWindow(opts)
     -- open animation
     winScale.Scale = 0.92
     window.BackgroundTransparency = 1
-    stroke(window).Transparency = 1
+    _stroke_window.Transparency = 1
     _task.delay(0.02, function()
         tween(winScale, T_SLOW, { Scale = 1 })
         tween(window, T_SLOW, { BackgroundTransparency = 0 })
-        tween(stroke(window), T_SLOW, { Transparency = 0 })
+        tween(_stroke_window, T_SLOW, { Transparency = 0 })
     end)
 
     -- Title bar
@@ -2304,7 +2304,7 @@ function AetherUI:CreateWindow(opts)
     function Window:Destroy()
         tween(winScale, T, { Scale = 0.9 })
         tween(window, T, { BackgroundTransparency = 1 })
-        tween(stroke(window), T, { Transparency = 1 })
+        tween(_stroke_window, T, { Transparency = 1 })
         _task.delay(T + 0.05, function()
             gui:Destroy()
         end)
