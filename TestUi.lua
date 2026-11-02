@@ -455,7 +455,7 @@ end
 --================================================================
 -- CreateWindow
 --================================================================
-function AetherUI.CreateWindow(opts)
+function AetherUI:CreateWindow(opts)
     opts = opts or {}
     assert(typeof(opts.Title) == "string", "CreateWindow: Title (string) is required")
 
@@ -2330,11 +2330,11 @@ end
 --================================================================
 -- Public helpers
 --================================================================
-function AetherUI.GetPlatform()
+function AetherUI:GetPlatform()
     return IsMobile and "Mobile" or "PC"
 end
 
-function AetherUI.AddTheme(name, themeTable)
+function AetherUI:AddTheme(name, themeTable)
     Themes[name] = themeTable
 end
 
