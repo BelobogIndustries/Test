@@ -2049,7 +2049,6 @@ function AetherUI:CreateWindow(opts)
             end)
         end
 
-        table.insert(self.Tabs, self)
         table.insert(Window.Tabs, self)
 
         if not Window.ActiveTab then
