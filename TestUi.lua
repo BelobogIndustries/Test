@@ -157,7 +157,6 @@ local function stroke(parent, color, thickness, transparency)
     s.Color = color
     s.Thickness = thickness or 1
     s.Transparency = transparency or 0
-    s.ApplyMode = Enum.ApplyMode.Contextual
     s.Parent = parent
     return s
 end
