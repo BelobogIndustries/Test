@@ -32,6 +32,23 @@ local CoreGui            = game:GetService("CoreGui")
 local HttpService        = game:GetService("HttpService")
 
 --================================================================
+-- Compatibility shims (defensive against sandboxed/old executors)
+--================================================================
+-- task library (added to Roblox in 2020; some executors lack it)
+local _task = task
+if not _task then
+    _task = {}
+    _task.delay = function(t, f) delay(t, f) end
+    _task.spawn = function(f) spawn(f) end
+    _task.wait  = function(t) return wait(t) end
+end
+
+-- safe property setter (for properties that may not exist in all environments)
+local function safeSet(obj, prop, val)
+    pcall(function() obj[prop] = val end)
+end
+
+--================================================================
 -- Constants & Platform Detection
 --================================================================
 local EASE       = Enum.EasingStyle.Quint
@@ -280,7 +297,7 @@ end
 function TooltipController:Hide()
     if not self.frame.Visible then return end
     tween(self.frame, T_FAST, { BackgroundTransparency = 1 })
-    task.delay(T_FAST, function() self.frame.Visible = false end)
+    _task.delay(T_FAST, function() self.frame.Visible = false end)
 end
 
 --================================================================
@@ -364,7 +381,7 @@ function NotificationStack:Push(opts)
     card.ZIndex = 81
     card.Parent = self.container
     corner(card, 8)
-    stroke(card, theme.Stroke, 1, 0)
+    local _stroke_card = stroke(card, theme.Stroke, 1, 0)
 
     local accentBar = Instance.new("Frame")
     accentBar.Name = "Accent"
@@ -405,19 +422,19 @@ function NotificationStack:Push(opts)
     bodyLabel.Parent = inner
 
     bindColor(card, "BackgroundColor3", "Notification")
-    bindColor(stroke(card), "Color", "Stroke")
+    bindColor(_stroke_card, "Color", "Stroke")
     bindColor(titleLabel, "TextColor3", "Text")
     bindColor(bodyLabel, "TextColor3", "TextMuted")
 
     local bodyH = bodyLabel.TextBounds.Y
     local targetH = 16 + bodyH + 20
 
-    task.spawn(function()
+    _task.spawn(function()
         card.Position = UDim2.new(1, 40, 0, 0)
         tween(card, T, { Position = UDim2.new(1, 0, 0, 0), Size = UDim2.new(1, 0, 0, targetH) })
-        task.wait(dur)
+        _task.wait(dur)
         tween(card, T, { Size = UDim2.new(1, 0, 0, 0), Position = UDim2.new(1, 40, 0, 0) })
-        task.wait(T + 0.05)
+        _task.wait(T + 0.05)
         card:Destroy()
     end)
 end
@@ -502,9 +519,9 @@ function AetherUI:CreateWindow(opts)
     watermark.ZIndex = 70
     watermark.Parent = gui
     corner(watermark, 8)
-    stroke(watermark, theme().Stroke, 1, 0)
+    local _stroke_watermark = stroke(watermark, theme().Stroke, 1, 0)
     bindColor(watermark, "BackgroundColor3", "Surface")
-    bindColor(stroke(watermark), "Color", "Stroke")
+    bindColor(_stroke_watermark, "Color", "Stroke")
 
     local wmDot = Instance.new("Frame")
     wmDot.Name = "Dot"
@@ -556,9 +573,9 @@ function AetherUI:CreateWindow(opts)
     window.ZIndex = 10
     window.Parent = gui
     corner(window, 12)
-    stroke(window, theme().StrokeStrong, 1, 0)
+    local _stroke_window = stroke(window, theme().StrokeStrong, 1, 0)
     bindColor(window, "BackgroundColor3", "Background")
-    bindColor(stroke(window), "Color", "StrokeStrong")
+    bindColor(_stroke_window, "Color", "StrokeStrong")
 
     local winScale = Instance.new("UIScale")
     winScale.Parent = window
@@ -569,7 +586,7 @@ function AetherUI:CreateWindow(opts)
     winScale.Scale = 0.92
     window.BackgroundTransparency = 1
     stroke(window).Transparency = 1
-    task.delay(0.02, function()
+    _task.delay(0.02, function()
         tween(winScale, T_SLOW, { Scale = 1 })
         tween(window, T_SLOW, { BackgroundTransparency = 0 })
         tween(stroke(window), T_SLOW, { Transparency = 0 })
@@ -672,9 +689,9 @@ function AetherUI:CreateWindow(opts)
     sidebar.Visible = not mobile
     sidebar.Parent = body
     corner(sidebar, 10)
-    stroke(sidebar, theme().Stroke, 1, 0)
+    local _stroke_sidebar = stroke(sidebar, theme().Stroke, 1, 0)
     bindColor(sidebar, "BackgroundColor3", "Sidebar")
-    bindColor(stroke(sidebar), "Color", "Stroke")
+    bindColor(_stroke_sidebar, "Color", "Stroke")
 
     local tabListParent  -- the scrolling frame that holds tab buttons
     local searchBox
@@ -689,7 +706,7 @@ function AetherUI:CreateWindow(opts)
         sidebarScroll.ScrollBarThickness = 2
         sidebarScroll.ScrollBarImageColor3 = theme().Stroke
         sidebarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        sidebarScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        safeSet(sidebarScroll, "AutomaticCanvasSize", Enum.AutomaticSize.Y)
         sidebarScroll.ZIndex = 12
         sidebarScroll.Parent = sidebar
         bindColor(sidebarScroll, "ScrollBarImageColor3", "Stroke")
@@ -731,9 +748,9 @@ function AetherUI:CreateWindow(opts)
         strip.ZIndex = 11
         strip.Parent = body
         corner(strip, 10)
-        stroke(strip, theme().Stroke, 1, 0)
+        local _stroke_strip = stroke(strip, theme().Stroke, 1, 0)
         bindColor(strip, "BackgroundColor3", "Sidebar")
-        bindColor(stroke(strip), "Color", "Stroke")
+        bindColor(_stroke_strip, "Color", "Stroke")
 
         local stripScroll = Instance.new("ScrollingFrame")
         stripScroll.BackgroundTransparency = 1
@@ -742,7 +759,7 @@ function AetherUI:CreateWindow(opts)
         stripScroll.Position = UDim2.new(0, 6, 0, 4)
         stripScroll.ScrollBarThickness = 0
         stripScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        stripScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
+        safeSet(stripScroll, "AutomaticCanvasSize", Enum.AutomaticSize.X)
         stripScroll.ScrollingDirection = Enum.ScrollingDirection.X
         stripScroll.ZIndex = 12
         stripScroll.Parent = strip
@@ -769,9 +786,9 @@ function AetherUI:CreateWindow(opts)
     contentArea.ZIndex = 11
     contentArea.Parent = body
     corner(contentArea, 10)
-    stroke(contentArea, theme().Stroke, 1, 0)
+    local _stroke_contentArea = stroke(contentArea, theme().Stroke, 1, 0)
     bindColor(contentArea, "BackgroundColor3", "Surface")
-    bindColor(stroke(contentArea), "Color", "Stroke")
+    bindColor(_stroke_contentArea, "Color", "Stroke")
 
     local contentScroll = Instance.new("ScrollingFrame")
     contentScroll.Name = "Content"
@@ -782,7 +799,7 @@ function AetherUI:CreateWindow(opts)
     contentScroll.ScrollBarThickness = 3
     contentScroll.ScrollBarImageColor3 = theme().Stroke
     contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    contentScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    safeSet(contentScroll, "AutomaticCanvasSize", Enum.AutomaticSize.Y)
     contentScroll.ZIndex = 12
     contentScroll.Parent = contentArea
     bindColor(contentScroll, "ScrollBarImageColor3", "Stroke")
@@ -810,9 +827,9 @@ function AetherUI:CreateWindow(opts)
         row.ZIndex = 12
         row.Parent = holder
         corner(row, 6)
-        stroke(row, th.Stroke, 1, 0)
+        local _stroke_row = stroke(row, th.Stroke, 1, 0)
         bindColor(row, "BackgroundColor3", "Element")
-        bindColor(stroke(row), "Color", "Stroke")
+        bindColor(_stroke_row, "Color", "Stroke")
 
         local lbl = Instance.new("TextLabel")
         lbl.BackgroundTransparency = 1
@@ -1233,9 +1250,9 @@ function AetherUI:CreateWindow(opts)
             listFrame.ZIndex = 30
             listFrame.Parent = row
             corner(listFrame, 8)
-            stroke(listFrame, t.StrokeStrong, 1, 0)
+            local _stroke_listFrame = stroke(listFrame, t.StrokeStrong, 1, 0)
             bindColor(listFrame, "BackgroundColor3", "Surface")
-            bindColor(stroke(listFrame), "Color", "StrokeStrong")
+            bindColor(_stroke_listFrame, "Color", "StrokeStrong")
 
             local listScroll = Instance.new("ScrollingFrame")
             listScroll.BackgroundTransparency = 1
@@ -1244,7 +1261,7 @@ function AetherUI:CreateWindow(opts)
             listScroll.ScrollBarThickness = 2
             listScroll.ScrollBarImageColor3 = t.Stroke
             listScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-            listScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+            safeSet(listScroll, "AutomaticCanvasSize", Enum.AutomaticSize.Y)
             listScroll.ZIndex = 31
             listScroll.Parent = listFrame
             bindColor(listScroll, "ScrollBarImageColor3", "Stroke")
@@ -1337,7 +1354,7 @@ function AetherUI:CreateWindow(opts)
             tween(chevron, T, { Rotation = 0 })
             if listFrame then
                 tween(listFrame, T, { Size = UDim2.new(0, 200, 0, 0) })
-                task.delay(T + 0.02, function()
+                _task.delay(T + 0.02, function()
                     if listFrame then listFrame:Destroy(); listFrame = nil end
                 end)
             end
@@ -1385,7 +1402,7 @@ function AetherUI:CreateWindow(opts)
             syncText()
             if expanded then
                 El:Collapse()
-                task.delay(T + 0.05, function() El:Expand() end)
+                _task.delay(T + 0.05, function() El:Expand() end)
             end
         end
 
@@ -1544,9 +1561,9 @@ function AetherUI:CreateWindow(opts)
             popup.ZIndex = 40
             popup.Parent = row
             corner(popup, 8)
-            stroke(popup, t.StrokeStrong, 1, 0)
+            local _stroke_popup = stroke(popup, t.StrokeStrong, 1, 0)
             bindColor(popup, "BackgroundColor3", "Surface")
-            bindColor(stroke(popup), "Color", "StrokeStrong")
+            bindColor(_stroke_popup, "Color", "StrokeStrong")
 
             local svArea = Instance.new("TextButton")
             svArea.Name = "SV"
@@ -1823,9 +1840,9 @@ function AetherUI:CreateWindow(opts)
         img.ZIndex = 12
         img.Parent = self._holder
         corner(img, 8)
-        stroke(img, th.Stroke, 1, 0)
+        local _stroke_img = stroke(img, th.Stroke, 1, 0)
         bindColor(img, "BackgroundColor3", "Element")
-        bindColor(stroke(img), "Color", "Stroke")
+        bindColor(_stroke_img, "Color", "Stroke")
 
         local El = {}
         function El:Set(newAsset, newSize)
@@ -1852,9 +1869,9 @@ function AetherUI:CreateWindow(opts)
         section.ZIndex = 12
         section.Parent = self._container
         corner(section, 8)
-        stroke(section, th.Stroke, 1, 0)
+        local _stroke_section = stroke(section, th.Stroke, 1, 0)
         bindColor(section, "BackgroundColor3", "Element")
-        bindColor(stroke(section), "Color", "Stroke")
+        bindColor(_stroke_section, "Color", "Stroke")
 
         local header = Instance.new("TextLabel")
         header.BackgroundTransparency = 1
@@ -2070,7 +2087,7 @@ function AetherUI:CreateWindow(opts)
         else
             tween(winScale, T, { Scale = 0.9 })
             tween(window, T, { BackgroundTransparency = 1 })
-            task.delay(T + 0.02, function()
+            _task.delay(T + 0.02, function()
                 if not self._visible then window.Visible = false end
             end)
         end
@@ -2116,9 +2133,9 @@ function AetherUI:CreateWindow(opts)
         modal.ZIndex = 91
         modal.Parent = overlay
         corner(modal, 10)
-        stroke(modal, th.StrokeStrong, 1, 0)
+        local _stroke_modal = stroke(modal, th.StrokeStrong, 1, 0)
         bindColor(modal, "BackgroundColor3", "Surface")
-        bindColor(stroke(modal), "Color", "StrokeStrong")
+        bindColor(_stroke_modal, "Color", "StrokeStrong")
 
         local titleL = Instance.new("TextLabel")
         titleL.BackgroundTransparency = 1
@@ -2164,7 +2181,7 @@ function AetherUI:CreateWindow(opts)
         local function close()
             tween(modal, T, { Size = UDim2.new(0, 380, 0, 0) })
             tween(overlay, T, { BackgroundTransparency = 1 })
-            task.delay(T + 0.02, function() overlay:Destroy() end)
+            _task.delay(T + 0.02, function() overlay:Destroy() end)
         end
 
         for _, b in ipairs(buttons) do
@@ -2288,7 +2305,7 @@ function AetherUI:CreateWindow(opts)
         tween(winScale, T, { Scale = 0.9 })
         tween(window, T, { BackgroundTransparency = 1 })
         tween(stroke(window), T, { Transparency = 1 })
-        task.delay(T + 0.05, function()
+        _task.delay(T + 0.05, function()
             gui:Destroy()
         end)
     end
@@ -2315,7 +2332,7 @@ function AetherUI:CreateWindow(opts)
     --========================
     -- Welcome notification
     --========================
-    task.delay(0.4, function()
+    _task.delay(0.4, function()
         notifStack:Push({
             Title = opts.Brand or "AetherUI",
             Text = "Loaded. Press " .. (Window.ToggleKey and Window.ToggleKey.Name or "None") .. " to toggle.",
