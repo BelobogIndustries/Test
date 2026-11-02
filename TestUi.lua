@@ -48,6 +48,24 @@ local function safeSet(obj, prop, val)
     pcall(function() obj[prop] = val end)
 end
 
+-- robust scrolling setup: tries AutomaticCanvasSize, AND manually syncs CanvasSize
+-- to the layout's content. Works even if AutomaticCanvasSize is unsupported.
+local function setupScroll(scrollFrame, layout, horizontal)
+    safeSet(scrollFrame, "AutomaticCanvasSize", horizontal and Enum.AutomaticSize.X or Enum.AutomaticSize.Y)
+    if layout then
+        local function update()
+            local size = layout.AbsoluteContentSize
+            if horizontal then
+                scrollFrame.CanvasSize = UDim2.new(0, size.X + 20, 0, 0)
+            else
+                scrollFrame.CanvasSize = UDim2.new(0, 0, 0, size.Y + 10)
+            end
+        end
+        update()
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(update)
+    end
+end
+
 --================================================================
 -- Constants & Platform Detection
 --================================================================
@@ -562,7 +580,7 @@ function AetherUI:CreateWindow(opts)
     -- Main Window frame
     local vp = workspace.CurrentCamera.ViewportSize
     local winWidth  = mobile and (vp.X - 24) or 640
-    local winHeight = mobile and 380 or 460
+    local winHeight = mobile and math.min(vp.Y - 100, 420) or 460
 
     local window = Instance.new("Frame")
     window.Name = "Window"
@@ -706,7 +724,7 @@ function AetherUI:CreateWindow(opts)
         sidebarScroll.ScrollBarThickness = 2
         sidebarScroll.ScrollBarImageColor3 = theme().Stroke
         sidebarScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        safeSet(sidebarScroll, "AutomaticCanvasSize", Enum.AutomaticSize.Y)
+        setupScroll(sidebarScroll, sidebarLayout)
         sidebarScroll.ZIndex = 12
         sidebarScroll.Parent = sidebar
         bindColor(sidebarScroll, "ScrollBarImageColor3", "Stroke")
@@ -759,7 +777,7 @@ function AetherUI:CreateWindow(opts)
         stripScroll.Position = UDim2.new(0, 6, 0, 4)
         stripScroll.ScrollBarThickness = 0
         stripScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-        safeSet(stripScroll, "AutomaticCanvasSize", Enum.AutomaticSize.X)
+        setupScroll(stripScroll, stripLayout, true)
         stripScroll.ScrollingDirection = Enum.ScrollingDirection.X
         stripScroll.ZIndex = 12
         stripScroll.Parent = strip
@@ -799,7 +817,7 @@ function AetherUI:CreateWindow(opts)
     contentScroll.ScrollBarThickness = 3
     contentScroll.ScrollBarImageColor3 = theme().Stroke
     contentScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    safeSet(contentScroll, "AutomaticCanvasSize", Enum.AutomaticSize.Y)
+    setupScroll(contentScroll, contentLayout)
     contentScroll.ZIndex = 12
     contentScroll.Parent = contentArea
     bindColor(contentScroll, "ScrollBarImageColor3", "Stroke")
@@ -1261,7 +1279,7 @@ function AetherUI:CreateWindow(opts)
             listScroll.ScrollBarThickness = 2
             listScroll.ScrollBarImageColor3 = t.Stroke
             listScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-            safeSet(listScroll, "AutomaticCanvasSize", Enum.AutomaticSize.Y)
+            setupScroll(listScroll, ll)
             listScroll.ZIndex = 31
             listScroll.Parent = listFrame
             bindColor(listScroll, "ScrollBarImageColor3", "Stroke")
